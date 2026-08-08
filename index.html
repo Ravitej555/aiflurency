@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThreatLens AI SOC — Autonomous Forensic Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- ── TOP NAVIGATION ─────────────────────────────────────────────────── -->
+  <header class="topnav">
+    <div class="topnav-left">
+      <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i><span class="brand-pulse"></span></div>
+      <div class="brand-info">
+        <div class="brand-name">THREATLENS <span class="soc-badge">AI SOC</span></div>
+      </div>
+    </div>
+    <div class="topnav-center">
+      <div class="ist-clock">
+        <i class="fa-regular fa-clock"></i>
+        <span id="istClock">IST: 06 Aug 2026, 04:08:16 pm</span>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <div class="user-chip">
+        <div class="user-avatar">RJ</div>
+        <div class="user-info">
+          <span class="user-name">Ravitej</span>
+          <span class="user-role">Lead SOC Analyst</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── APP BODY: LEFT CONTENT + RIGHT SIDEBAR ─────────────────────────── -->
+  <div class="app-body">
+
+    <!-- ════ LEFT CONTENT COLUMN ════ -->
+    <div class="left-col">
+
+      <!-- Metric Cards -->
+      <section class="metrics-row">
+        <div class="metric-card">
+          <div class="mc-header">
+            <span class="mc-label">MALWARE FAMILY</span>
+            <div class="mc-icon mc-icon-cyan"><i class="fa-solid fa-terminal"></i></div>
+          </div>
+          <div class="mc-value" id="malwareFamilyValue">Ransomware</div>
+          <div class="mc-sub text-cyan"><i class="fa-solid fa-arrow-trend-up"></i> <span id="malwareSub">10 active signatures</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-header">
+            <span class="mc-label">AI PREDICTION</span>
+            <div class="mc-icon mc-icon-red"><i class="fa-solid fa-circle-dot"></i></div>
+          </div>
+          <div class="mc-value text-red" id="aiPredictionValue">MALICIOUS</div>
+          <div class="mc-sub text-red"><i class="fa-solid fa-triangle-exclamation"></i> <span id="aiPredSub">Decision tree anomaly verified</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-header">
+            <span class="mc-label">CONFIDENCE SCORE</span>
+            <div class="mc-icon mc-icon-purple"><i class="fa-solid fa-wave-square"></i></div>
+          </div>
+          <div class="mc-value" id="confidenceScoreValue">98.4%</div>
+          <div class="mc-sub text-muted">Model Gini Accuracy: <span id="confSub">96.8%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-header">
+            <span class="mc-label">RISK LEVEL</span>
+            <div class="mc-icon mc-icon-amber"><i class="fa-solid fa-shield-exclamation"></i></div>
+          </div>
+          <div class="mc-value text-amber" id="riskLevelValue">CRITICAL</div>
+          <div class="mc-sub text-amber"><i class="fa-solid fa-flag"></i> <span id="riskSub">3 critical vectors flagged</span></div>
+        </div>
+      </section>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="feed">
+          <i class="fa-solid fa-wave-square"></i> Live Intelligence Feed
+        </button>
+        <button class="tab-btn" data-tab="scanner">
+          <i class="fa-solid fa-upload"></i> File &amp; Link AI Scanner
+        </button>
+        <button class="tab-btn" data-tab="trends">
+          <i class="fa-solid fa-chart-bar"></i> Trend Analysis &amp; Metrics
+        </button>
+        <button class="sync-btn" id="syncBtn">
+          <i class="fa-solid fa-rotate"></i> Sync DB
+        </button>
+      </div>
+
+      <!-- ── TAB: LIVE FEED ────────────────────────────────────────────── -->
+      <div class="tab-content active" id="tab-feed">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title"><i class="fa-solid fa-shield-halved text-cyan"></i> Real-Time Threat Intelligence Feed</div>
+              <div class="panel-sub">Autonomous telemetry stream filtered by AI severity classification.</div>
+            </div>
+            <div class="table-controls">
+              <div class="search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="threatSearch" placeholder="Search IP, host, CVE...">
+              </div>
+              <div class="filter-pills">
+                <button class="fpill active" data-f="all">All</button>
+                <button class="fpill fpill-critical" data-f="CRITICAL">Critical</button>
+                <button class="fpill fpill-high" data-f="HIGH">High</button>
+                <button class="fpill fpill-med" data-f="MEDIUM">Medium</button>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="threat-table">
+              <thead>
+                <tr>
+                  <th>TIMESTAMP<br><small>(IST)</small></th>
+                  <th>THREAT CLASSIFICATION</th>
+                  <th>SOURCE IP</th>
+                  <th>TARGET HOST</th>
+                  <th>SEVERITY</th>
+                  <th>AI CONFIDENCE</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="threatTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: SCANNER ──────────────────────────────────────────────── -->
+      <div class="tab-content" id="tab-scanner">
+        <div class="panel">
+          <div class="scanner-header">
+            <div class="panel-title"><i class="fa-solid fa-upload text-cyan"></i> AI Decision Tree Forensic File &amp; Link Scanner</div>
+            <div class="panel-sub">Upload raw binary artifacts or suspect URLs for instant Shannon Entropy &amp; Gini impurity inspection.</div>
+          </div>
+          <div class="scanner-grid">
+            <div class="scanner-card" id="dropZone">
+              <input type="file" id="fileInput" style="display:none">
+              <div class="drop-icon"><i class="fa-regular fa-file-code"></i></div>
+              <div class="drop-title">Drag and Drop Suspect Binary</div>
+              <div class="drop-sub">Supports .exe, .dll, .pdf, .docx, .ps1, .sh payloads</div>
+              <button class="choose-btn" id="chooseFileBtn"><i class="fa-solid fa-upload"></i> Upload File</button>
+              <div class="selected-file" id="selectedFileName">No file selected</div>
+              <div class="file-status-badge" id="fileStatusBadge" style="display:none"></div>
+            </div>
+            <div class="scanner-card url-card">
+              <div class="url-label"><i class="fa-solid fa-globe text-cyan"></i> URL or Suspicious Payload Inspector</div>
+              <div class="url-sub">Input malicious IP, domain, or script snippet for immediate AI classification.</div>
+              <textarea id="urlInput" placeholder="e.g., http://malicious-c2.ru/payload.exe or Invoke-WebRequest -Uri ..."></textarea>
+              <button class="scan-url-btn" id="scanUrlBtn"><i class="fa-solid fa-bolt"></i> Scan Payload / URL</button>
+            </div>
+          </div>
+          <div class="scan-results" id="scanResults" style="display:none">
+            <div class="url-result-row" id="urlResultRow" style="display:none">
+              <div class="url-result-pill">
+                <button class="url-remove" id="urlRemove"><i class="fa-solid fa-xmark"></i></button>
+                <span class="url-val" id="urlResultVal"></span>
+                <span class="url-size" id="urlResultSize"></span>
+              </div>
+              <div class="url-badge" id="urlClassBadge"></div>
+            </div>
+            <div class="result-metrics">
+              <div class="rm-card">
+                <div class="rm-label">Scan Status</div>
+                <div class="rm-value" id="rmStatus">—</div>
+              </div>
+              <div class="rm-card">
+                <div class="rm-label">Shannon Entropy</div>
+                <div class="rm-value text-cyan" id="rmEntropy">—</div>
+              </div>
+              <div class="rm-card">
+                <div class="rm-label">Suspicious Strings</div>
+                <div class="rm-value text-amber" id="rmStrings">—</div>
+              </div>
+              <div class="rm-card">
+                <div class="rm-label">Severity Risk</div>
+                <div class="rm-value" id="rmSeverity">—</div>
+              </div>
+              <div class="rm-card">
+                <div class="rm-label">AI Gini Confidence</div>
+                <div class="rm-value text-cyan" id="rmConfidence">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: TRENDS ───────────────────────────────────────────────── -->
+      <div class="tab-content" id="tab-trends">
+        <div class="panel trends-panel">
+          <div class="trends-header">
+            <div class="panel-title"><i class="fa-solid fa-microchip text-cyan"></i> Threat Intelligence Trend Analysis &amp; Telemetry Charts</div>
+            <div class="panel-sub">Aggregated vector distributions and Gini impurity classification breakdown.</div>
+          </div>
+          <div class="trends-charts-grid">
+            <div class="trend-chart-card">
+              <div class="chart-card-title">Threat Severity Distribution</div>
+              <div class="chart-box">
+                <canvas id="severityChart"></canvas>
+              </div>
+            </div>
+            <div class="trend-chart-card">
+              <div class="chart-card-title">Malware Classification Breakdown</div>
+              <div class="chart-box">
+                <canvas id="breakdownChart"></canvas>
+              </div>
+              <div class="chart-legend-grid" id="chartLegendGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </div><!-- /left-col -->
+
+    <!-- ════ RIGHT SIDEBAR ════ -->
+    <aside class="right-sidebar">
+
+
+      <!-- AI Copilot Panel -->
+      <div class="panel copilot-panel">
+        <div class="copilot-topbar">
+          <span class="copilot-title"><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> THREATLENS AI COPILOT</span>
+          <div class="copilot-topbar-right">
+            <span class="online-dot" title="Gemini 2.5 Flash Active"></span>
+            <button class="cp-tool-btn" id="newChatBtn" title="New Chat Session"><i class="fa-solid fa-plus"></i></button>
+            <button class="cp-tool-btn" id="exportPdfBtn" title="Export SOC Report PDF"><i class="fa-solid fa-file-pdf"></i></button>
+            <button class="cp-tool-btn" id="downloadHistoryBtn" title="Download Conversation Transcript"><i class="fa-solid fa-download"></i></button>
+            <button class="cp-tool-btn" id="clearChatBtn" title="Clear Messages"><i class="fa-solid fa-trash"></i></button>
+            <button class="cp-tool-btn" id="cpSettingsBtn" title="Copilot Settings"><i class="fa-solid fa-gear"></i></button>
+          </div>
+        </div>
+
+        <!-- Active Context Attachment Indicator -->
+        <div class="copilot-context-bar" id="copilotContextBar" style="display:none;">
+          <span class="ctx-icon"><i class="fa-solid fa-paperclip text-cyan"></i></span>
+          <span class="ctx-text" id="copilotContextText">Context Attached: None</span>
+          <button class="ctx-clear" id="copilotContextClear" title="Detach context"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="copilot-messages" id="copilotMessages">
+          <div class="copilot-msg">
+            <i class="fa-solid fa-robot copilot-avatar"></i>
+            <div class="copilot-bubble">
+              ThreatLens AI Copilot online. Expert SOC Analyst &amp; DFIR Specialist. I can interpret malware scans, analyze uploaded artifacts, generate SOC reports, and recommend incident mitigations.
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggested Quick Prompts Bar -->
+        <div class="copilot-chips" id="copilotChips">
+          <button class="cp-chip" onclick="askCopilot('Explain this malware')">🦠 Explain Malware</button>
+          <button class="cp-chip" onclick="askCopilot('Generate SOC Report')">📋 Generate SOC Report</button>
+          <button class="cp-chip" onclick="askCopilot('Mitigation Steps')">🛡️ Mitigation Steps</button>
+          <button class="cp-chip" onclick="askCopilot('Explain AI Prediction')">🔬 Explain AI Prediction</button>
+          <button class="cp-chip" onclick="askCopilot('Analyze Uploaded File')">🧪 Analyze Uploaded File</button>
+          <button class="cp-chip" onclick="askCopilot('Explain Confidence Score')">🎯 Explain Confidence</button>
+          <button class="cp-chip" onclick="askCopilot('Threat Summary')">📊 Threat Summary</button>
+          <button class="cp-chip" onclick="askCopilot('What is this malware family?')">🔍 Malware Family</button>
+          <button class="cp-chip" onclick="askCopilot('Generate Incident Response')">🚨 Incident Response</button>
+          <button class="cp-chip" onclick="askCopilot('Show IOC Summary')">📌 IOC Summary</button>
+        </div>
+
+        <div class="copilot-input-row">
+          <textarea id="copilotInput" placeholder="Ask ThreatLens AI Copilot (e.g. Generate SOC Report, Mitigate Ransomware)..." rows="1"></textarea>
+          <button id="copilotSend"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+
+    </aside><!-- /right-sidebar -->
+
+  </div><!-- /app-body -->
+
+  <!-- ── FORENSIC MODAL ───────────────────────────────────────────────────── -->
+  <div class="modal-backdrop hidden" id="analysisModal">
+    <div class="modal-card">
+      <div class="modal-hdr">
+        <div class="modal-title"><i class="fa-solid fa-microscope text-cyan"></i> ThreatLens AI — Forensic Analysis</div>
+        <button class="modal-close" id="closeModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-ftr">
+        <button class="modal-dismiss" id="dismissModal">Close Analysis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COPILOT SETTINGS MODAL ───────────────────────────────────────────── -->
+  <div class="modal-backdrop hidden" id="copilotSettingsModal">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-hdr">
+        <div class="modal-title"><i class="fa-solid fa-gear text-cyan"></i> AI Copilot Configuration</div>
+        <button class="modal-close" id="closeCpSettings"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div>
+            <label style="font-size:.78rem;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">AI Reasoning Engine</label>
+            <select id="cpModelMode" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.5rem;color:var(--text);font-family:'Outfit',sans-serif;">
+              <option value="neural">ThreatLens Built-in SOC Neural Engine (Offline / Instant)</option>
+              <option value="gemini">Google Gemini API (Live Cloud Reasoning)</option>
+            </select>
+          </div>
+          <div id="geminiKeyGroup" style="display:none;">
+            <label style="font-size:.78rem;font-weight:600;color:var(--text);display:block;margin-bottom:4px;">Gemini API Key</label>
+            <input type="password" id="geminiApiKey" placeholder="AIzaSy..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.5rem;color:var(--text);font-family:'JetBrains Mono',monospace;">
+            <small style="font-size:.68rem;color:var(--muted);margin-top:4px;display:block;">Optional: Input your key from Google AI Studio to unlock live LLM chat.</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="modal-dismiss" id="saveCpSettings" style="background:var(--cyan);color:#000;font-weight:700;">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
