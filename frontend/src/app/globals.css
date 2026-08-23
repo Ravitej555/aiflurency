@@ -1,0 +1,528 @@
+/**
+ * ThreatLens AI — Global CSS
+ * Cyber dark theme with glassmorphism, neon accents, and CSS custom properties
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties (shadcn/ui compatible) ─────────────────────────── */
+@layer base {
+  :root {
+    /* Dark cyber theme as default */
+    --background:   220 35% 4%;
+    --foreground:   210 40% 96%;
+    --card:         220 30% 7%;
+    --card-foreground: 210 40% 96%;
+    --primary:      189 100% 50%;
+    --primary-foreground: 220 35% 4%;
+    --secondary:    220 25% 12%;
+    --secondary-foreground: 210 40% 96%;
+    --muted:        220 25% 12%;
+    --muted-foreground: 215 20% 55%;
+    --border:       220 20% 15%;
+    --input:        220 25% 12%;
+    --ring:         189 100% 50%;
+    --radius:       0.625rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cyber-950 text-foreground font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(0, 128, 255, 0.04) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Custom scrollbar — cyberpunk style */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: hsl(220, 35%, 4%); }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #00d4ff, #0080ff);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #00d4ff; }
+}
+
+/* ── Utility Classes ──────────────────────────────────────────────────────── */
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply bg-cyber-800/60 backdrop-blur-md border border-white/5 rounded-xl;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  /* Neon glow button */
+  .btn-cyber {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200;
+    @apply bg-accent/10 border border-accent/30 text-accent;
+    @apply hover:bg-accent/20 hover:border-accent/60 hover:shadow-cyber;
+  }
+
+  /* Severity badge */
+  .badge-severity {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-critical { @apply badge-severity bg-critical-muted text-critical border border-critical/30; }
+  .badge-high     { @apply badge-severity bg-high-muted text-high border border-high/30; }
+  .badge-medium   { @apply badge-severity bg-medium-muted text-medium border border-medium/30; }
+  .badge-low      { @apply badge-severity bg-low-muted text-low border border-low/30; }
+  .badge-info     { @apply badge-severity bg-info-muted text-info border border-info/30; }
+
+  /* Stat card */
+  .stat-card {
+    @apply glass-card p-5 flex flex-col gap-2;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    @apply shadow-cyber;
+  }
+
+  /* Animated scan line overlay */
+  .scan-overlay::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.4), transparent);
+    animation: scan-line 4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Terminal-style text */
+  .terminal-text {
+    @apply font-mono text-accent text-sm;
+  }
+
+  /* Grid background pattern */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+/* ── Detective Character ─────────────────────────────────────────────────── */
+.detective-wrapper {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.d-ground-shadow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 10px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.detective-char {
+  position: relative;
+  height: 300px;
+  transform-origin: bottom center;
+}
+
+.detective-img {
+  height: 300px;
+  width: auto;
+  display: block;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(0,229,255,0.15));
+  transition: filter 0.4s ease;
+}
+
+.detective-glow {
+  position: absolute;
+  top: 12%;
+  left: 5%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,255,0.6) 0%, rgba(0,229,255,0.15) 40%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.detective-beam {
+  position: absolute;
+  top: 20%;
+  left: 12%;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(to bottom, rgba(0,229,255,0.9), rgba(0,229,255,0.3), transparent);
+  border-radius: 2px;
+  opacity: 0;
+  transition: height 0.5s ease, opacity 0.3s ease;
+  box-shadow: 0 0 12px rgba(0,229,255,0.6), 0 0 30px rgba(0,229,255,0.3);
+  z-index: 3;
+}
+
+.detective-target {
+  position: absolute;
+  bottom: -6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--red, #ff3b5c);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 4;
+}
+
+.detective-target::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  width: 5px;
+  height: 5px;
+  background: var(--red, #ff3b5c);
+  border-radius: 50%;
+}
+
+.detective-particles {
+  position: absolute;
+  top: 15%;
+  left: 8%;
+  width: 30px;
+  height: 120px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.d-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--cyan, #00e5ff);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.d-particle:nth-child(1) { right: 2px; bottom: 10px; }
+.d-particle:nth-child(2) { right: 14px; bottom: 30px; }
+.d-particle:nth-child(3) { right: 6px; bottom: 50px; }
+.d-particle:nth-child(4) { right: 20px; bottom: 20px; }
+.d-particle:nth-child(5) { right: 10px; bottom: 65px; }
+
+/* Notification */
+.d-notif {
+  position: absolute;
+  top: -10px;
+  right: -40px;
+  background: rgba(8,14,28,0.95);
+  border: 1px solid var(--red, #ff3b5c);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-m, 'JetBrains Mono', monospace);
+  font-size: 0.52rem;
+  font-weight: 700;
+  color: var(--red, #ff3b5c);
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px rgba(255,59,92,0.2);
+  z-index: 20;
+}
+
+.d-notif .d-notif-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--red, #ff3b5c);
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  box-shadow: 0 0 6px var(--red, #ff3b5c);
+}
+
+.d-notif.info-notif {
+  border-color: var(--cyan, #00e5ff);
+  color: var(--cyan, #00e5ff);
+}
+
+.d-notif.info-notif .d-notif-dot {
+  background: var(--cyan, #00e5ff);
+  box-shadow: 0 0 6px var(--cyan, #00e5ff);
+}
+
+/* ═══════ Walking Animation ═══════ */
+.detective-char.walking .detective-img {
+  animation: walkCycle 0.7s cubic-bezier(0.35,0,0.65,1) infinite;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 25px rgba(0,229,255,0.3));
+}
+
+@keyframes walkCycle {
+  0%   { transform: translateX(-5%) rotate(-2deg); }
+  12%  { transform: translateX(-3%) rotate(2deg) translateY(-4px); }
+  25%  { transform: translateX(0%) rotate(0deg) translateY(-6px); }
+  37%  { transform: translateX(3%) rotate(-2deg) translateY(-4px); }
+  50%  { transform: translateX(5%) rotate(2deg); }
+  62%  { transform: translateX(3%) rotate(-2deg) translateY(-4px); }
+  75%  { transform: translateX(0%) rotate(0deg) translateY(-6px); }
+  87%  { transform: translateX(-3%) rotate(2deg) translateY(-4px); }
+  100% { transform: translateX(-5%) rotate(-2deg); }
+}
+
+/* ═══════ Stopped: Look Around ═══════ */
+.detective-char.stopped .detective-img {
+  animation: lookAround 1.5s ease-in-out;
+}
+
+@keyframes lookAround {
+  0%, 100% { transform: rotate(0deg); }
+  20%  { transform: rotate(5deg); }
+  40%  { transform: rotate(0deg); }
+  60%  { transform: rotate(-5deg); }
+  80%  { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* ═══════ Inspecting ═══════ */
+.detective-char.inspecting .detective-img {
+  animation: inspectPose 0.5s ease forwards;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 30px rgba(0,229,255,0.5));
+}
+
+.detective-char.inspecting .detective-glow {
+  opacity: 1;
+  animation: glowPulse 0.8s ease-in-out infinite;
+}
+
+.detective-char.inspecting .detective-beam {
+  height: 140px;
+  opacity: 1;
+}
+
+.detective-char.inspecting .detective-particles {
+  opacity: 1;
+}
+
+@keyframes inspectPose {
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(-10deg) translateY(-2px); }
+  100% { transform: rotate(-10deg) translateY(-2px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+
+/* ═══════ Detecting ═══════ */
+.detective-char.detecting .detective-img {
+  animation: detectPulse 0.3s ease-in-out 3;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 40px rgba(255,59,92,0.6));
+}
+
+.detective-char.detecting .detective-target {
+  opacity: 1;
+  animation: targetPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes detectPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes targetPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* ═══════ Alerting ═══════ */
+.detective-char.alerting .detective-img {
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6)) drop-shadow(0 0 35px rgba(255,59,92,0.5));
+}
+
+/* ═══════ Idle ═══════ */
+.detective-char.idle .detective-img {
+  animation: idleBreathe 3.5s ease-in-out infinite;
+}
+
+@keyframes idleBreathe {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(0deg) translateY(-1.5px) scale(1.003); }
+}
+
+/* ═══════ Flip ═══════ */
+.detective-char.flip {
+  transform: scaleX(-1);
+}
+
+/* ═══════ Particle Animations ═══════ */
+.detective-char.inspecting .d-particle {
+  animation: particleUp 1.6s ease-in-out infinite;
+}
+
+.d-particle:nth-child(1) { animation-delay: 0s; }
+.d-particle:nth-child(2) { animation-delay: 0.35s; }
+.d-particle:nth-child(3) { animation-delay: 0.7s; }
+.d-particle:nth-child(4) { animation-delay: 1.05s; }
+.d-particle:nth-child(5) { animation-delay: 0.15s; }
+
+@keyframes particleUp {
+  0% { opacity: 0; transform: translateY(0) scale(0.5); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-50px) scale(0); }
+}
+
+/* ── Threat Detection Animation ─────────────────────────────────────────── */
+.threat-detection-overlay {
+  position: absolute;
+  width: 100px;
+  height: 120px;
+}
+
+.scan-cone {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  background: linear-gradient(to bottom, rgba(0,229,255,0.4), rgba(0,229,255,0.1), transparent);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  transform-origin: top center;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan, #00e5ff), transparent);
+  box-shadow: 0 0 10px var(--cyan, #00e5ff);
+  transition: top 0.05s linear;
+}
+
+.scan-particle {
+  position: absolute;
+  background: var(--cyan, #00e5ff);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--cyan, #00e5ff);
+}
+
+.target-marker {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+}
+
+.target-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--red, #ff3b5c);
+  border-radius: 50%;
+  animation: targetRingPulse 1s ease-out infinite;
+}
+
+.target-ring:nth-child(2) { inset: -5px; animation-delay: 0.2s; }
+.target-ring:nth-child(3) { inset: -10px; animation-delay: 0.4s; }
+
+@keyframes targetRingPulse {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.target-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: var(--red, #ff3b5c);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--red, #ff3b5c);
+}
+
+.detection-pulse {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background: var(--red, #ff3b5c);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.ambient-scan-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.ambient-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.15), transparent);
+}
+
+/* ── Detective Responsive ─────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .detective-char { height: 300px; }
+  .detective-img { height: 300px; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detective-char { height: 200px; }
+  .detective-img { height: 200px; }
+}
+
+@media (max-width: 767px) {
+  .detective-char { height: 120px; }
+  .detective-img { height: 120px; }
+  .detective-wrapper { left: 2% !important; bottom: 10px !important; }
+  .d-notif { font-size: 0.45rem; right: -30px; }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .detective-wrapper { transition: opacity 0.3s ease !important; }
+  .detective-char,
+  .detective-char.walking,
+  .detective-char.idle,
+  .detective-char.stopped,
+  .detective-char.inspecting,
+  .detective-char.detecting,
+  .detective-char.alerting,
+  .detective-char.continuing { animation: none !important; }
+  .detective-beam { transition: none !important; }
+  .detective-particles { display: none !important; }
+  .detective-target { animation: none !important; }
+  .d-particle { animation: none !important; }
+  .ambient-scan-container { display: none !important; }
+}

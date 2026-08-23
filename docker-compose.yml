@@ -1,20 +1,90 @@
-version: '3.8'
+# ─────────────────────────────────────────────────────────────────────────────
+# ThreatLens AI — Local Development Docker Compose Orchestration
+# ─────────────────────────────────────────────────────────────────────────────
 
 services:
-  threatlens-ai:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: threatlens_ai_copilot
-    ports:
-      - "8080:8080"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - PORT=8080
-      - HOST=0.0.0.0
+  # ── PostgreSQL Database ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: threatlens-db
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-threatlens}
+      POSTGRES_USER: ${POSTGRES_USER:-threatlens_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-threatlens_password_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-threatlens_user} -d ${POSTGRES_DB:-threatlens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - threatlens-network
+
+  # ── FastAPI Backend ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: threatlens-backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      HOST: 0.0.0.0
+      PORT: 8000
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-threatlens}
+      POSTGRES_USER: ${POSTGRES_USER:-threatlens_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-threatlens_password_123}
+      SECRET_KEY: ${SECRET_KEY:-09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7}
+      CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
       timeout: 10s
       retries: 3
+    networks:
+      - threatlens-network
+
+  # ── Next.js Frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: threatlens-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - threatlens-network
+
+networks:
+  threatlens-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

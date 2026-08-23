@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ThreatLens AI — Production Docker Compose Overrides
+# Use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    image: ${ECR_REGISTRY}/threatlens-backend:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      LOG_FORMAT: json
+      WORKERS: 4
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  frontend:
+    image: ${ECR_REGISTRY}/threatlens-frontend:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M

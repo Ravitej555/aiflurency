@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ThreatLens AI — Backend Dependencies
+# Pin all versions for reproducible builds in CI/CD pipelines.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Web Framework
+fastapi==0.111.0
+uvicorn[standard]==0.30.1          # ASGI server with WebSocket support
+
+# Database
+sqlalchemy[asyncio]==2.0.31        # Async ORM
+alembic==1.13.2                    # Database migrations
+asyncpg==0.29.0                    # Async PostgreSQL driver
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0   # JWT encoding/decoding
+passlib[bcrypt]==1.7.4             # Password hashing
+python-multipart==0.0.9            # Form data support for OAuth2
+
+# Configuration
+pydantic-settings==2.3.4           # Settings management from env vars
+pydantic[email]==2.8.2             # Data validation
+
+# HTTP Client (for integration tests)
+httpx==0.27.0
+
+# Structured Logging
+python-json-logger==2.0.7
+
+# Testing
+pytest==8.3.2
+pytest-asyncio==0.23.8
+pytest-cov==5.0.0
+factory-boy==3.3.1                 # Test fixtures / factories
+
+# Code Quality (dev only — kept here for CI simplicity)
+ruff==0.5.5
