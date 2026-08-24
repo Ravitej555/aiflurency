@@ -57,31 +57,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SYSTEM_PROMPT = """You are ThreatLens AI Copilot — a highly intelligent, general-purpose AI assistant powered by Google Gemini, embedded inside the ThreatLens AI SOC platform.
+SYSTEM_PROMPT = """You are ThreatLens AI Copilot — an elite, highly intelligent cybersecurity SOC Copilot and general-purpose AI assistant powered by Google Gemini.
 
-You can answer ANY question the user asks — general knowledge, science, history, coding, math, current events, creative writing, or cybersecurity. You are just as capable as Google Gemini in answering general questions.
+Your mission is to provide exceptionally clear, systematic, well-structured, and easily readable answers.
 
-Your primary specialisation is cybersecurity:
-- Explain malware, viruses, ransomware, trojans, worms, rootkits, spyware, adware in detail.
-- Interpret scan reports and forensic indicators (entropy, YARA, hashes, strings).
-- Recommend mitigation and incident response playbooks.
-- Generate structured SOC executive reports.
-- Map attack vectors to MITRE ATT&CK framework techniques.
-- Explain AI predictions and confidence scores.
-- Analyze uploaded files and URLs for threats.
+### STRUCTURE YOUR ANSWERS SYSTEMATICALLY:
+Unless the user asks for a simple 1-line answer, always structure responses cleanly using these standard sections:
 
-But you ALSO answer general questions like:
-- "What is photosynthesis?" → answer fully
-- "Write a Python function to sort a list" → answer fully
-- "What is machine learning?" → answer fully
-- "Who invented the internet?" → answer fully
+1. 🎯 **Executive Summary / Quick Answer**: 1–2 crisp, high-impact sentences directly answering the question.
+2. 🔍 **Key Breakdown & Core Concepts**: Structured bullet points with **bold key terms** explaining the mechanism or facts.
+3. 📊 **Comparison / Reference Table**: (When comparing items, scales, metrics, or categories) A neat Markdown table with clear column headers.
+4. 🛡️ **Cybersecurity & ThreatLens Context**: Practical real-world context, MITRE ATT&CK mapping, or threat forensic relevance.
+5. ⚡ **Actionable Next Steps / Best Practices**: 2–3 clear recommendations or takeaway actions.
 
-Formatting rules:
-- Use rich markdown formatting with **bold**, `code`, headers (###), bullet lists.
-- Use syntax-highlighted code blocks with language labels.
-- Always be helpful, accurate, and concise.
-- Never refuse a general knowledge question.
-- Never provide instructions for creating malware or conducting attacks."""
+### FORMATTING & READABILITY RULES:
+- Use clean Markdown with headers (`###`), bullet points (`*`), bold highlights, and code tags (`` `like_this` ``).
+- Keep paragraphs short (2–3 sentences max). Avoid massive, unbroken walls of text.
+- Use clean Markdown tables for numbers, entropy ranges, malware types, and comparisons.
+- You can answer ANY question (cybersecurity, software development, math, science, history, general knowledge).
+- Never refuse general knowledge questions.
+- Never provide actionable instructions for creating live malware or attacking targets."""
 
 # ── PYDANTIC MODELS ─────────────────────────────────────────────
 class ChatMessage(BaseModel):
@@ -89,6 +84,12 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatRequest(BaseModel):
+    message: str
+    history: Optional[List[ChatMessage]] = []
+    scan_context: Optional[Dict[str, Any]] = None
+    api_key: Optional[str] = None
+
+class StreamChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = []
     scan_context: Optional[Dict[str, Any]] = None
@@ -145,25 +146,22 @@ To receive real-time answers generated directly by **Google Gemini API** via the
 
     full_text = f"{system_override}{ctx_prompt}\n\nUser Request: {prompt_text}"
 
-    # ── Auto-detect key format ────────────────────────────────────
-    # AQ... keys = OAuth 2.0 access tokens → use Authorization: Bearer header
-    # AIzaSy... keys = legacy API key → use ?key= query param
-    is_oauth_key = key.startswith("AQ")
-
-    # Gemini models — newest first
-    models = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+    # Gemini models — updated to active available versions with fallback
+    models = [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-pro-latest"
+    ]
     last_err = ""
     for model in models:
-        # Build URL — OAuth keys don't use ?key= param
-        if is_oauth_key:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {key}"
-            }
-        else:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-            headers = {"Content-Type": "application/json"}
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": key
+        }
 
         payload = {
             "contents": [
@@ -179,7 +177,7 @@ To receive real-time answers generated directly by **Google Gemini API** via the
         }
         try:
             res = requests.post(url, json=payload, headers=headers, timeout=30)
-            print(f"[Gemini] model={model} auth={'Bearer' if is_oauth_key else 'APIKey'} status={res.status_code}")
+            print(f"[Gemini] model={model} status={res.status_code}")
             if res.status_code == 200:
                 data = res.json()
                 text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
@@ -187,24 +185,28 @@ To receive real-time answers generated directly by **Google Gemini API** via the
                     print(f"[Gemini] ✅ Success with {model}")
                     return text
             elif res.status_code == 429 or "Quota exceeded" in res.text:
-                return "⚠️ **GEMINI API RATE LIMIT / QUOTA EXCEEDED (429)**\n\nYour Google Gemini free tier key reached its rate limit. Please wait **~60 seconds** and try again."
+                last_err = "rate_limit"
+                continue
             elif res.status_code == 401:
                 err_data = {}
                 try: err_data = res.json()
                 except: pass
-                err_msg = err_data.get("error", {}).get("message", "Unauthorized — token may be expired.")
-                print(f"[Gemini] ❌ 401 Unauthorized on {model}: {err_msg}")
-                return f"❌ **GEMINI AUTH ERROR (401)**: {err_msg}\n\n**Your AQ... key may have expired.** These are short-lived OAuth tokens. Please generate a fresh key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and paste it in Copilot ⚙️ Settings."
+                err_msg = err_data.get("error", {}).get("message", "Invalid or expired API credentials.")
+                print(f"[Gemini] ❌ 401 on {model}: {err_msg}")
+                return f"❌ **GEMINI AUTH ERROR (401)**: {err_msg}\n\nPlease check or refresh your Gemini API key in Copilot ⚙️ Settings."
+            elif res.status_code in (404, 503):
+                # Model busy or unavailable, try next
+                print(f"[Gemini] ⚠️ {model} returned {res.status_code} ({res.text[:120]}), trying next model...")
+                continue
             elif res.status_code in (400, 403):
                 err_data = {}
                 try: err_data = res.json()
                 except: pass
                 err_msg = err_data.get("error", {}).get("message", res.text[:300])
                 print(f"[Gemini] ❌ Error {res.status_code} on {model}: {err_msg}")
-                if res.status_code == 400 and "API_KEY_INVALID" not in err_msg:
-                    last_err = err_msg
-                    continue  # try next model
-                return f"❌ **GEMINI API ERROR ({res.status_code})**: {err_msg}\n\nPlease verify your API key in Copilot ⚙️ Settings."
+                if "API_KEY_INVALID" in err_msg:
+                    return f"❌ **GEMINI API KEY INVALID**: {err_msg}\n\nPlease verify your API key in Copilot ⚙️ Settings."
+                continue  # try next model
             else:
                 last_err = f"HTTP {res.status_code}: {res.text[:200]}"
                 print(f"[Gemini] ⚠️ {model} returned {res.status_code}: {res.text[:200]}")
@@ -415,6 +417,115 @@ async def copilot_chat(req: ChatRequest):
         "response": response_text,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     }
+
+@app.post("/api/copilot/chat/stream")
+async def copilot_chat_stream(req: StreamChatRequest):
+    scan_ctx = req.scan_context or {}
+    user_key = (req.api_key or "").strip()
+    key = user_key or os.getenv("GEMINI_API_KEY", "") or GEMINI_API_KEY
+
+    if not key:
+        async def no_key_stream():
+            yield json.dumps({"text": "GEMINI API KEY REQUIRED. Please add your key in Settings."}) + "\n"
+        return StreamingResponse(no_key_stream(), media_type="application/x-ndjson; charset=utf-8")
+
+    ctx_prompt = ""
+    if scan_ctx:
+        ctx_prompt = f"\n[ATTACHED ARTIFACT CONTEXT: Filename={scan_ctx.get('filename','N/A')}, Prediction={scan_ctx.get('prediction','N/A')}, Confidence={scan_ctx.get('confidence','N/A')}, Entropy={scan_ctx.get('entropy','N/A')}]"
+
+    # Build history into prompt
+    history_text = ""
+    if req.history:
+        recent = req.history[-6:]
+        for msg in recent:
+            role = "User" if msg.role == "user" else "Assistant"
+            history_text += f"{role}: {msg.content}\n"
+
+    full_text = f"{SYSTEM_PROMPT}{ctx_prompt}\n\n{history_text}User Request: {req.message}"
+
+    models = [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-pro-latest"
+    ]
+
+    async def event_stream():
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={key}"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": key
+            }
+
+            payload = {
+                "contents": [{"role": "user", "parts": [{"text": full_text}]}],
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+            }
+
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                        if response.status == 200:
+                            async for line in response.content:
+                                decoded = line.decode("utf-8").strip()
+                                if decoded.startswith("data: "):
+                                    data_str = decoded[6:]
+                                    if data_str == "[DONE]":
+                                        return
+                                    try:
+                                        data = json.loads(data_str)
+                                        text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                                        if text:
+                                            yield json.dumps({"text": text}) + "\n"
+                                    except json.JSONDecodeError:
+                                        continue
+                            return
+                        elif response.status == 429:
+                            yield json.dumps({"text": "\n\n⚠️ Rate limit reached. Please wait a moment."}) + "\n"
+                            return
+            except ImportError:
+                # Fallback: use requests in a thread if aiohttp not available
+                import concurrent.futures
+                import requests as req_lib
+
+                def sync_stream():
+                    try:
+                        resp = req_lib.post(url, json=payload, headers=headers, timeout=30, stream=True)
+                        if resp.status_code == 200:
+                            for chunk in resp.iter_lines():
+                                if chunk:
+                                    decoded = chunk.decode("utf-8").strip()
+                                    if decoded.startswith("data: "):
+                                        data_str = decoded[6:]
+                                        if data_str == "[DONE]":
+                                            break
+                                        try:
+                                            data = json.loads(data_str)
+                                            text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                                            if text:
+                                                yield json.dumps({"text": text}) + "\n"
+                                        except json.JSONDecodeError:
+                                            continue
+                    except Exception as e:
+                        yield json.dumps({"text": f"\n\nError: {str(e)}"}) + "\n"
+
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    for chunk in pool.submit(lambda: list(sync_stream())).result():
+                        yield chunk
+                return
+            except Exception as e:
+                print(f"[Gemini Stream] Error on {model}: {e}")
+                continue
+
+        # Fallback to non-streaming if all models fail
+        response_text = query_gemini_api(req.message, scan_ctx=scan_ctx, user_key=user_key)
+        yield json.dumps({"text": response_text}) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson; charset=utf-8")
 
 @app.post("/api/copilot/analyze")
 async def copilot_analyze(meta: FileMetadata):

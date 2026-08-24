@@ -1172,7 +1172,214 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1500);
   });
 
-  // ── 12. RADAR CANVAS ─────────────────────────────────────────
+  // ── 12. AI COPILOT SIDEBAR ─────────────────────────────────
+  const API_BASE = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file')) ? window.location.origin : 'http://localhost:8080';
+  let copilotHistory = [];
+  let copilotStreaming = false;
+
+  const copilotFab = document.getElementById('copilotFab');
+  const copilotSidebar = document.getElementById('copilotSidebar');
+  const copilotCloseBtn = document.getElementById('copilotCloseBtn');
+  const copilotClearBtn = document.getElementById('copilotClearBtn');
+  const copilotInput = document.getElementById('copilotInput');
+  const copilotSendBtn = document.getElementById('copilotSendBtn');
+  const copilotMessages = document.getElementById('copilotMessages');
+  const copilotChips = document.getElementById('copilotChips');
+  const copilotContextBar = document.getElementById('copilotContextBar');
+  const copilotContextText = document.getElementById('copilotContextText');
+  const copilotCtxClear = document.getElementById('copilotCtxClear');
+
+  function toggleCopilot() {
+    copilotSidebar.classList.toggle('open');
+    copilotFab.classList.toggle('hidden');
+  }
+
+  copilotFab?.addEventListener('click', toggleCopilot);
+  copilotCloseBtn?.addEventListener('click', toggleCopilot);
+
+  copilotCtxClear?.addEventListener('click', () => {
+    window.activeScanContext = null;
+    copilotContextBar.style.display = 'none';
+  });
+
+  window.updateCopilotContextUI = function() {
+    if (window.activeScanContext) {
+      copilotContextBar.style.display = 'flex';
+      copilotContextText.textContent = window.activeScanContext.filename + ' — ' + window.activeScanContext.prediction;
+    }
+  };
+
+  function renderMarkdownContent(text) {
+    if (!text) return '';
+    try {
+      if (typeof window.marked !== 'undefined' && typeof window.marked.parse === 'function') {
+        return window.marked.parse(text, { breaks: true, gfm: true });
+      }
+    } catch (e) {
+      console.warn('marked parse error:', e);
+    }
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/`([^`]+)`/gim, '<code>$1</code>')
+      .replace(/\n/gim, '<br>');
+  }
+
+  function addCopilotMessage(text, role, animate = false) {
+    const msg = document.createElement('div');
+    msg.className = 'copilot-msg';
+    const avatar = document.createElement('i');
+    avatar.className = role === 'user'
+      ? 'fa-solid fa-user copilot-avatar user-avatar-copilot'
+      : 'fa-solid fa-robot copilot-avatar';
+    const bubble = document.createElement('div');
+    bubble.className = 'copilot-bubble' + (role === 'user' ? ' user-bubble' : '');
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+
+    if (role === 'assistant' && animate) {
+      bubble.innerHTML = '<div class="copilot-typing"><span></span><span></span><span></span></div>';
+      copilotMessages.appendChild(msg);
+      copilotMessages.scrollTop = copilotMessages.scrollHeight;
+      return { bubble, msg };
+    }
+
+    if (role === 'assistant') {
+      bubble.innerHTML = renderMarkdownContent(text);
+    } else {
+      bubble.textContent = text;
+    }
+
+    copilotMessages.appendChild(msg);
+    copilotMessages.scrollTop = copilotMessages.scrollHeight;
+    return { bubble, msg };
+  }
+
+  function addCopyButton(msgEl) {
+    const bar = document.createElement('div');
+    bar.className = 'copilot-msg-action-bar';
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+    copyBtn.addEventListener('click', () => {
+      const bubbleText = msgEl.querySelector('.copilot-bubble')?.innerText || '';
+      navigator.clipboard.writeText(bubbleText).then(() => {
+        copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => { copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 1800);
+      });
+    });
+    bar.appendChild(copyBtn);
+    msgEl.appendChild(bar);
+  }
+
+  async function sendCopilotMessage(message) {
+    if (!message || copilotStreaming) return;
+    copilotStreaming = true;
+    copilotSendBtn.disabled = true;
+
+    addCopilotMessage(message, 'user');
+    copilotHistory.push({ role: 'user', content: message });
+    copilotInput.value = '';
+
+    const { bubble, msg } = addCopilotMessage('', 'assistant', true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/copilot/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          history: copilotHistory.slice(-6),
+          scan_context: window.activeScanContext || null,
+          api_key: localStorage.getItem('threatlens_gemini_key') || ''
+        })
+      });
+
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let accumulated = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.text) {
+              accumulated += data.text;
+              bubble.innerHTML = renderMarkdownContent(accumulated);
+              copilotMessages.scrollTop = copilotMessages.scrollHeight;
+            }
+          } catch (e) {
+            accumulated += line;
+            bubble.innerHTML = renderMarkdownContent(accumulated);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        try {
+          const data = JSON.parse(buffer);
+          if (data.text) accumulated += data.text;
+        } catch (e) {
+          accumulated += buffer;
+        }
+        bubble.innerHTML = renderMarkdownContent(accumulated);
+      }
+
+      copilotHistory.push({ role: 'assistant', content: accumulated });
+      addCopyButton(msg);
+
+    } catch (error) {
+      console.error('Copilot error:', error);
+      bubble.innerHTML = 'Sorry, I could not connect to the AI server. Make sure FastAPI is running on port 8080.';
+    } finally {
+      copilotStreaming = false;
+      copilotSendBtn.disabled = false;
+      copilotInput.focus();
+    }
+  }
+
+  copilotSendBtn?.addEventListener('click', () => {
+    sendCopilotMessage(copilotInput.value.trim());
+  });
+
+  copilotInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendCopilotMessage(copilotInput.value.trim());
+    }
+  });
+
+  copilotClearBtn?.addEventListener('click', () => {
+    copilotHistory = [];
+    copilotMessages.innerHTML = '';
+    addCopilotMessage('Chat cleared. How can I help you?', 'assistant');
+  });
+
+  copilotChips?.querySelectorAll('.cp-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const msg = chip.dataset.msg;
+      if (msg) {
+        copilotInput.value = msg;
+        sendCopilotMessage(msg);
+      }
+    });
+  });
+
+  // ── 13. RADAR CANVAS ─────────────────────────────────────────
   const canvas = document.getElementById('radarCanvas');
   if (canvas) {
     const ctx = canvas.getContext('2d');
