@@ -18,7 +18,7 @@ if sys.platform == "win32":
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, Response, BackgroundTasks
-from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -381,12 +381,9 @@ async def serve_index():
         return FileResponse(index_file)
     return HTMLResponse("<h1>ThreatLens AI Backend Running</h1>")
 
-@app.get("/landing", response_class=HTMLResponse)
+@app.get("/landing")
 async def serve_landing():
-    landing_file = BASE_DIR / "landing.html"
-    if landing_file.exists():
-        return FileResponse(landing_file)
-    return HTMLResponse("<h1>Landing Page</h1>")
+    return RedirectResponse(url="/#overview", status_code=302)
 
 class KeyRequest(BaseModel):
     api_key: str
