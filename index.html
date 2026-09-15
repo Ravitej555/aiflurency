@@ -1208,8 +1208,15 @@
     }
 
     /* Scroll reveal */
-    .reveal{opacity:0;transform:translateY(30px);transition:.7s ease}
-    .reveal.visible{opacity:1;transform:none}
+    .reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1 !important;
+      transform: none !important;
+    }
 
 
 
@@ -2097,17 +2104,28 @@
 
       if (viewName === 'overview') {
         if (consoleView) consoleView.classList.add('hidden');
-        if (overviewView) overviewView.classList.add('active');
+        if (overviewView) {
+          overviewView.classList.add('active');
+          overviewView.style.display = 'block';
+          overviewView.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+        }
         if (btnOverview) btnOverview.classList.add('active');
         if (btnConsole) btnConsole.classList.remove('active');
-        history.replaceState(null, null, '#overview');
+        if (window.location.hash !== '#overview') {
+          history.replaceState(null, null, '#overview');
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        if (overviewView) overviewView.classList.remove('active');
+        if (overviewView) {
+          overviewView.classList.remove('active');
+          overviewView.style.display = 'none';
+        }
         if (consoleView) consoleView.classList.remove('hidden');
         if (btnConsole) btnConsole.classList.add('active');
         if (btnOverview) btnOverview.classList.remove('active');
-        history.replaceState(null, null, '#console');
+        if (window.location.hash !== '#console') {
+          history.replaceState(null, null, '#console');
+        }
 
         if (subTab) {
           const tabBtn = document.querySelector(`.tab-btn[data-tab="${subTab}"]`);
@@ -2117,14 +2135,19 @@
       }
     }
 
-    // Handle initial URL hash
-    window.addEventListener('DOMContentLoaded', () => {
+    function initHashView() {
       if (window.location.hash === '#overview') {
         switchMainView('overview');
       } else {
         switchMainView('console');
       }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initHashView);
+    } else {
+      initHashView();
+    }
 
     window.addEventListener('hashchange', () => {
       if (window.location.hash === '#overview') {
@@ -2137,3 +2160,4 @@
 </body>
 
 </html>
+

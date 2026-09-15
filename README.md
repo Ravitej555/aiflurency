@@ -1,8 +1,15 @@
 # 🛡️ ThreatLens AI — Autonomous Cyber Threat Intelligence & Forensic Operations Center
 
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-ThreatLens_AI-00e5ff?style=for-the-badge&logo=google-chrome&logoColor=black)](https://ravitej555.github.io/threadlens-AI/landing.html)
+[![SOC Console](https://img.shields.io/badge/🛰️_SOC_Console-Live_Preview-a855f7?style=for-the-badge&logo=target&logoColor=white)](https://ravitej555.github.io/threadlens-AI/index.html)
+
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+
+> 🚀 **Live Interactive Demo:**
+> * 🌐 **Landing Page & Architecture:** [https://ravitej555.github.io/threadlens-AI/landing.html](https://ravitej555.github.io/threadlens-AI/landing.html)
+> * 🛰️ **SOC Security Console:** [https://ravitej555.github.io/threadlens-AI/index.html](https://ravitej555.github.io/threadlens-AI/index.html)
 
 **ThreatLens AI** is an autonomous cybersecurity SOC (Security Operations Center) copilot and malware forensic analysis platform. Designed for incident responders, SOC analysts, and threat hunters, ThreatLens AI combines machine learning heuristics, byte-level Shannon Entropy calculations, and real-time generative AI intelligence to rapidly detect, classify, and mitigate cyber threats.
 
