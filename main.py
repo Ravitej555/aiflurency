@@ -147,14 +147,7 @@ To receive real-time answers generated directly by **Google Gemini API** via the
     full_text = f"{system_override}{ctx_prompt}\n\nUser Request: {prompt_text}"
 
     # Gemini models — updated to active available versions with fallback
-    models = [
-        "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-2.5-flash",
-        "gemini-pro-latest"
-    ]
+    models = ["gemini-flash-latest"]
     last_err = ""
     for model in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
@@ -172,11 +165,11 @@ To receive real-time answers generated directly by **Google Gemini API** via the
             ],
             "generationConfig": {
                 "temperature": 0.7,
-                "maxOutputTokens": 2048
+                "maxOutputTokens": 768
             }
         }
         try:
-            res = requests.post(url, json=payload, headers=headers, timeout=30)
+            res = requests.post(url, json=payload, headers=headers, timeout=15)
             print(f"[Gemini] model={model} status={res.status_code}")
             if res.status_code == 200:
                 data = res.json()
@@ -440,16 +433,10 @@ async def copilot_chat_stream(req: StreamChatRequest):
 
     full_text = f"{SYSTEM_PROMPT}{ctx_prompt}\n\n{history_text}User Request: {req.message}"
 
-    models = [
-        "gemini-3.6-flash",
-        "gemini-3.7-flash",
-        "gemini-3.5-flash",
-        "gemini-flash-latest",
-        "gemini-2.5-flash",
-        "gemini-pro-latest"
-    ]
+    models = ["gemini-flash-latest"]
 
     async def event_stream():
+        yield json.dumps({"text": "Analyzing your request...\n\n"}) + "\n"
         for model in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={key}"
             headers = {
@@ -459,13 +446,13 @@ async def copilot_chat_stream(req: StreamChatRequest):
 
             payload = {
                 "contents": [{"role": "user", "parts": [{"text": full_text}]}],
-                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 768}
             }
 
             try:
                 import aiohttp
                 async with aiohttp.ClientSession() as session:
-                    async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                    async with session.post(url, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as response:
                         if response.status == 200:
                             async for line in response.content:
                                 decoded = line.decode("utf-8").strip()

@@ -123,6 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return '#94a3b8';
   }
 
+  // ── HTML ESCAPING HELPER (XSS PREV) ────────────────────────
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function renderThreats() {
     const tbody = document.getElementById('threatTableBody');
     if (!tbody) return;
@@ -134,44 +145,59 @@ document.addEventListener('DOMContentLoaded', () => {
       const cFilter = (currentFilter || 'all').toUpperCase();
       const matchSev = cFilter === 'ALL' || tSev === cFilter;
       const matchQ = !query ||
+        (t.id || '').toLowerCase().includes(query) ||
         (t.classification || '').toLowerCase().includes(query) ||
         (t.classifyDesc || '').toLowerCase().includes(query) ||
         (t.sourceIP || '').toLowerCase().includes(query) ||
-        (t.target || '').toLowerCase().includes(query);
+        (t.target || '').toLowerCase().includes(query) ||
+        (t.status || '').toLowerCase().includes(query) ||
+        (t.vector || '').toLowerCase().includes(query);
       return matchSev && matchQ;
     });
 
     if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">
-            <i class="fa-solid fa-folder-open" style="font-size:1.8rem;margin-bottom:0.5rem;color:var(--muted);"></i><br>
-            No threats match the current filter criteria.
+          <td colspan="7" style="text-align:center;padding:2.5rem 1rem;color:#64748b;">
+            <i class="fa-solid fa-folder-open" style="font-size:2rem;margin-bottom:0.75rem;color:var(--muted);display:block;"></i>
+            <div style="font-size:0.92rem;color:var(--text);font-weight:600;margin-bottom:0.35rem;">No threats match "${escapeHTML(query)}"</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:1.1rem;">Try searching by Threat ID (e.g. TR-9041), malware family, IP address, or status.</div>
+            <button id="clearSearchBtn" type="button" style="background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);color:var(--cyan);padding:0.45rem 1.1rem;border-radius:6px;font-size:0.75rem;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;transition:0.2s;">
+              <i class="fa-solid fa-rotate-left" style="margin-right:6px;"></i> Clear Search & Reset Table
+            </button>
           </td>
         </tr>
       `;
+      document.getElementById('clearSearchBtn')?.addEventListener('click', () => {
+        const sInput = document.getElementById('threatSearch');
+        if (sInput) sInput.value = '';
+        currentFilter = 'all';
+        document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+        document.querySelector('.fpill[data-f="all"]')?.classList.add('active');
+        renderThreats();
+      });
       return;
     }
 
     tbody.innerHTML = filtered.map(t => `
-      <tr id="row-${t.id}" class="${t.isNew ? 'new-threat-row' : ''}">
-        <td><span class="ts">${t.ts || ''}</span></td>
+      <tr id="row-${escapeHTML(t.id)}" class="${t.isNew ? 'new-threat-row' : ''}">
+        <td><span class="ts">${escapeHTML(t.ts) || ''}</span></td>
         <td>
           <div class="classify">
-            <span class="classify-dot" style="background:${getDotColor(t.classification || '')}"></span>${t.classification || 'Unknown'}
+            <span class="classify-dot" style="background:${getDotColor(t.classification || '')}"></span>${escapeHTML(t.classification) || 'Unknown'}
           </div>
-          <span class="classify-sub">${t.classifyDesc || ''}</span>
+          <span class="classify-sub">${escapeHTML(t.classifyDesc) || ''}</span>
         </td>
-        <td><span class="ip-code">${t.sourceIP || 'N/A'}</span></td>
-        <td><span class="ip-code">${t.target || 'N/A'}</span></td>
-        <td><span class="badge ${getBadgeClass(t.severity || 'LOW')}">${t.severity || 'LOW'}</span></td>
-        <td><strong>${t.confidence || '0%'}</strong></td>
+        <td><span class="ip-code">${escapeHTML(t.sourceIP) || 'N/A'}</span></td>
+        <td><span class="ip-code">${escapeHTML(t.target) || 'N/A'}</span></td>
+        <td><span class="badge ${getBadgeClass(t.severity || 'LOW')}">${escapeHTML(t.severity) || 'LOW'}</span></td>
+        <td><strong>${escapeHTML(t.confidence) || '0%'}</strong></td>
         <td>
           <div class="act-btns">
-            <button class="act-btn act-analyze" onclick="openModal('${t.id}')">
+            <button class="act-btn act-analyze" onclick="openModal('${escapeHTML(t.id)}')">
               <i class="fa-solid fa-microscope"></i> Analyze
             </button>
-            <button class="act-btn act-del" onclick="deleteThreat('${t.id}')"><i class="fa-solid fa-trash"></i> Remove</button>
+            <button class="act-btn act-del" onclick="deleteThreat('${escapeHTML(t.id)}')"><i class="fa-solid fa-trash"></i> Remove</button>
           </div>
         </td>
       </tr>
@@ -412,8 +438,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 6. URL SCANNER ───────────────────────────────────────────
   document.getElementById('scanUrlBtn')?.addEventListener('click', () => {
-    const url = document.getElementById('urlInput')?.value.trim();
-    if (!url) return;
+    const urlInput = document.getElementById('urlInput');
+    const scanBtn = document.getElementById('scanUrlBtn');
+    const url = urlInput?.value.trim();
+
+    // 1. Edge Case: Empty input validation & feedback
+    if (!url) {
+      if (urlInput) {
+        urlInput.style.borderColor = 'var(--red)';
+        urlInput.style.boxShadow = '0 0 14px rgba(239,68,68,0.45)';
+        urlInput.placeholder = '⚠ Please enter a valid URL, domain, or payload script before scanning!';
+        urlInput.focus();
+        setTimeout(() => {
+          urlInput.style.borderColor = '';
+          urlInput.style.boxShadow = '';
+          urlInput.placeholder = 'e.g., http://malicious-c2.ru/payload.exe or Invoke-WebRequest -Uri ...';
+        }, 3500);
+      }
+      return;
+    }
+
+    // 2. Edge Case: Double submit & rapid multi-click protection
+    if (scanBtn?.classList.contains('scanning-busy')) return;
+    if (scanBtn) {
+      scanBtn.classList.add('scanning-busy');
+      scanBtn.disabled = true;
+      scanBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Payload...';
+    }
 
     // Parse URL to get parts
     let host = '', path = '';
@@ -699,6 +750,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('rmSeverity').style.color   = sevColor;
     document.getElementById('rmConfidence').textContent = confPct;
     document.getElementById('scanResults').style.display = 'flex';
+
+    // Reset scan button state from loading
+    const scanBtn = document.getElementById('scanUrlBtn');
+    if (scanBtn) {
+      setTimeout(() => {
+        scanBtn.disabled = false;
+        scanBtn.classList.remove('scanning-busy');
+        scanBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Scan Payload / URL';
+      }, 350);
+    }
 
     // ── Active Scan Context Attachment ────────────────────────────
     window.activeScanContext = {

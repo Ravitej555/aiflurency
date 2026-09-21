@@ -10,8 +10,17 @@
 > 🚀 **Live Interactive Demo:**
 > * 🌐 **Landing Page & Architecture:** [https://ravitej555.github.io/threadlens-AI/landing.html](https://ravitej555.github.io/threadlens-AI/landing.html)
 > * 🛰️ **SOC Security Console:** [https://ravitej555.github.io/threadlens-AI/index.html](https://ravitej555.github.io/threadlens-AI/index.html)
+> * 📋 **FlyRank AI Fluency Checkpoint Report:** [Break Your Own Site — Hardening & Diligence Report](BREAK_YOUR_OWN_SITE_REPORT.md)
 
 **ThreatLens AI** is an autonomous cybersecurity SOC (Security Operations Center) copilot and malware forensic analysis platform. Designed for incident responders, SOC analysts, and threat hunters, ThreatLens AI combines machine learning heuristics, byte-level Shannon Entropy calculations, and real-time generative AI intelligence to rapidly detect, classify, and mitigate cyber threats.
+
+---
+
+## 🎯 FlyRank AI Fluency: "Break Your Own Site" Checkpoint
+This repository contains the hardened, production-ready deliverable for the FlyRank AI Fluency **Break Your Own Site** checkpoint:
+- **Audit Deliverable:** Full triage matrix, fixed vs. known-limitations list, and peer review sign-off are documented in [BREAK_YOUR_OWN_SITE_REPORT.md](BREAK_YOUR_OWN_SITE_REPORT.md).
+- **Hardened Fix-Nows:** Empty form submission handling, multi-click/double-submit debounce locks, stored/reflected XSS entity escaping, and zero-result search recovery.
+- **Findability & SEO:** Embedded Open Graph previews, Twitter card meta, canonical links, and Schema.org JSON-LD structured data.
 
 ---
 
