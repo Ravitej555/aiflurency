@@ -10,17 +10,18 @@
 > 🚀 **Live Interactive Demo:**
 > * 🌐 **Landing Page & Architecture:** [https://ravitej555.github.io/threadlens-AI/landing.html](https://ravitej555.github.io/threadlens-AI/landing.html)
 > * 🛰️ **SOC Security Console:** [https://ravitej555.github.io/threadlens-AI/index.html](https://ravitej555.github.io/threadlens-AI/index.html)
-> * 📋 **FlyRank AI Fluency Checkpoint Report:** [Break Your Own Site — Hardening & Diligence Report](BREAK_YOUR_OWN_SITE_REPORT.md)
+> * 🚩 **FlyRank Checkpoint Report (Domain + Badge):** [Plant Your Flag: Domain + Badge Report](PLANT_YOUR_FLAG_REPORT.md)
+> * 📋 **Previous Checkpoint Report (Hardening):** [Break Your Own Site Report](BREAK_YOUR_OWN_SITE_REPORT.md)
+> * 🎓 **FlyRank Credential Verification:** [Verify Ravitej Manu (FR-GAIF-2026-RM)](https://internship.flyrank.ai/verify?id=FR-GAIF-2026-RM&first_name=Ravitej)
 
 **ThreatLens AI** is an autonomous cybersecurity SOC (Security Operations Center) copilot and malware forensic analysis platform. Designed for incident responders, SOC analysts, and threat hunters, ThreatLens AI combines machine learning heuristics, byte-level Shannon Entropy calculations, and real-time generative AI intelligence to rapidly detect, classify, and mitigate cyber threats.
 
 ---
 
-## 🎯 FlyRank AI Fluency: "Break Your Own Site" Checkpoint
-This repository contains the hardened, production-ready deliverable for the FlyRank AI Fluency **Break Your Own Site** checkpoint:
-- **Audit Deliverable:** Full triage matrix, fixed vs. known-limitations list, and peer review sign-off are documented in [BREAK_YOUR_OWN_SITE_REPORT.md](BREAK_YOUR_OWN_SITE_REPORT.md).
-- **Hardened Fix-Nows:** Empty form submission handling, multi-click/double-submit debounce locks, stored/reflected XSS entity escaping, and zero-result search recovery.
-- **Findability & SEO:** Embedded Open Graph previews, Twitter card meta, canonical links, and Schema.org JSON-LD structured data.
+## 🎯 FlyRank AI Fluency: "Plant Your Flag" & "Break Your Own Site" Checkpoints
+This repository contains the verified, production-ready deliverables for FlyRank AI Fluency:
+- **Plant Your Flag: Domain + Badge (Week 7 / Week 9):** Custom domain routing, privacy-friendly visitor telemetry (`analytics.js`), launch hygiene (SVG favicon, 1200x630 `og-preview.png`), and official FlyRank Graduate Credential Badge installed in the footer. Documented in [PLANT_YOUR_FLAG_REPORT.md](PLANT_YOUR_FLAG_REPORT.md).
+- **Break Your Own Site Audit:** Full edge-case matrix, fixed vs. known-limitations list, and triage documented in [BREAK_YOUR_OWN_SITE_REPORT.md](BREAK_YOUR_OWN_SITE_REPORT.md).
 
 ---
 
